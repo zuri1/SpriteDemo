@@ -211,6 +211,7 @@ typedef enum {
     SKAction *moveLaserActionWithDone = [SKAction sequence:@[laserMoveAction,laserDoneAction]];
     
     [shipLaser runAction:moveLaserActionWithDone withKey:@"laserFired"];
+    [self playLaserSound];
 }
 
 -(void)update:(CFTimeInterval)currentTime {
@@ -271,6 +272,8 @@ typedef enum {
             if ([shipLaser intersectsNode:asteroid]) {
                 shipLaser.hidden = YES;
                 asteroid.hidden = YES;
+                // Play the asteroid damage sound
+                [self playAsteroidHitSound];
                 continue;
             }
         }
@@ -281,7 +284,7 @@ typedef enum {
             SKAction *blinkForTime = [SKAction repeatAction:blink count:4];
             [self.ship runAction:blinkForTime];
             _lives--;
-            NSLog(@"your face feels alienated");
+            [self playShipDamageSound];
         }
     }
     
@@ -373,6 +376,18 @@ typedef enum {
     backgroundAudioPlayer.numberOfLoops = -1;
     [backgroundAudioPlayer setVolume:1.0];
     [backgroundAudioPlayer play];
+}
+
+- (void)playAsteroidHitSound {
+    [self runAction:[SKAction playSoundFileNamed:@"hurt_asteroid_01.wav" waitForCompletion:NO]];
+}
+
+- (void)playLaserSound {
+    [self runAction:[SKAction playSoundFileNamed:@"laser_shoot_01.wav" waitForCompletion:NO]];
+}
+
+- (void)playShipDamageSound {
+    [self runAction:[SKAction playSoundFileNamed:@"hurt_ship_01.wav" waitForCompletion:NO]];
 }
 
 -(float)randomValueBetween:(float)low andValue:(float)high
