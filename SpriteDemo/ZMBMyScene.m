@@ -16,6 +16,8 @@
     NSMutableArray *_shipLasers;
     int _nextShipLaser;
     int _lives;
+    double _gameOverTime;
+    bool _gameOver;
 }
 
 @property (strong, nonatomic) SKSpriteNode *mainCharacter;
@@ -24,6 +26,10 @@
 #define kNumFlappys 8
 #define kNumLasers 5
 
+typedef enum {
+    kEndReasonWin,
+    kEndReasonLose
+} EndReason;
 
 @end
 
@@ -34,6 +40,8 @@
         /* Setup your scene here */
         
         _nextFlappy = 0;
+        
+        
         
         self.physicsBody = [SKPhysicsBody bodyWithEdgeLoopFromRect:self.frame];
         for (int i = 0; i < 2; i++) {
@@ -77,14 +85,43 @@
             laser.hidden = YES;
         }
         
+        [self startTheGame];
+        
     }
     return self;
+}
+
+- (void)startTheGame
+{
+    _lives = 3;
+    double curTime = CACurrentMediaTime();
+    _gameOverTime = curTime + 30.0;
+    _gameOver = NO;
+    
+    self.mainCharacter.hidden = NO;
+    
+    
 }
 
 -(void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event {
     
 //    [self.mainCharacter.physicsBody setVelocity:CGVectorMake(0, 7)];
 //    [self.mainCharacter.physicsBody applyImpulse:CGVectorMake(0, 7)];
+    
+    for (UITouch *touch in touches) {
+        SKNode *n = [self nodeAtPoint:[touch locationInNode:self]];
+        if (n != self && [n.name isEqual:@"restartLabel"]) {
+            [[self childNodeWithName:@"restartLabel"] removeFromParent];
+            [[self childNodeWithName:@"winLoseLabel"] removeFromParent];
+            [self startTheGame];
+            return;
+        }
+    }
+    
+    if (_gameOver) {
+        return;
+    }
+    
     
     SKSpriteNode *shipLaser = [_shipLasers objectAtIndex:_nextShipLaser];
     _nextShipLaser++;
@@ -160,6 +197,42 @@
         [flappy runAction:moveFlappyActionWithDone];
     }
     
+    for (SKSpriteNode *flappy in _flappyArray) {
+        if (flappy.hidden) {
+            continue;
+        }
+        for (SKSpriteNode *shipLaser in _shipLasers) {
+            if (shipLaser.hidden) {
+                continue;
+            }
+            
+            if ([shipLaser intersectsNode:flappy]) {
+                shipLaser.hidden = YES;
+                flappy.hidden = YES;
+                
+                NSLog(@"you just destroyed a postmodern masterpiece");
+                continue;
+            }
+        }
+        if ([self.mainCharacter intersectsNode:flappy]) {
+            flappy.hidden = YES;
+            SKAction *blink = [SKAction sequence:@[[SKAction fadeOutWithDuration:0.1], [SKAction fadeInWithDuration:0.1]]];
+            SKAction *blinkForTime = [SKAction repeatAction:blink count:4];
+            [self.mainCharacter runAction:blinkForTime];
+            _lives--;
+            NSLog(@"your face feels alienated");
+        }
+    }
+    
+    if (_lives <= 0) {
+        NSLog(@"you lose :(");
+        [self endTheScene:kEndReasonLose];
+    } else if (curTime >= _gameOverTime) {
+        NSLog(@"you win!");
+        [self endTheScene:kEndReasonWin];
+    }
+    
+    
 //    for (SKSpriteNode *flappy in self.flappyArray) {
 //        if ([self.mainCharacter intersectsNode:flappy]) {
 //            
@@ -175,5 +248,70 @@
 //    }
     
 }
+
+- (void)endTheScene:(EndReason)endReason {
+    if (_gameOver) {
+        return;
+    }
+    
+    [self removeAllActions];
+    self.mainCharacter.hidden = YES;
+    _gameOver = YES;
+    
+    NSString *message;
+    if (endReason == kEndReasonWin) {
+        message = @"You win!";
+    } else if (endReason == kEndReasonLose) {
+        message = @"You Lose!";
+    }
+    
+    SKLabelNode *label;
+    label = [[SKLabelNode alloc] initWithFontNamed:@"Helvetica-CondensedMedium"];
+    label.name = @"winLoseLabel";
+    label.text = message;
+    label.scale = 0.1;
+    label.position = CGPointMake(self.frame.size.width/2, self.frame.size.height * 0.6);
+    label.fontColor = [SKColor yellowColor];
+    [self addChild:label];
+    
+    SKLabelNode *restartLabel;
+    restartLabel = [[SKLabelNode alloc] initWithFontNamed:@"Helvetica-CondensedMedium"];
+    restartLabel.name = @"restartLabel";
+    restartLabel.text = @"Again?";
+    restartLabel.scale = 0.5;
+    restartLabel.position = CGPointMake(self.frame.size.width/2, self.frame.size.height * 0.4);
+    restartLabel.fontColor = [SKColor yellowColor];
+    [self addChild:restartLabel];
+    
+    SKAction *labelScaleAction = [SKAction scaleTo:1.0 duration:0.5];
+    
+    [restartLabel runAction:labelScaleAction];
+    [label runAction:labelScaleAction];
+    
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 @end
