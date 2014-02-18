@@ -44,6 +44,8 @@ static const uint32_t asteroidCategory = 0x1 << 2;
         
         _nextAsteroid = 0;
         
+        self.physicsWorld.contactDelegate = self;
+        
         [self setupPhysicsWorld];
         
         [self startBackgroundMusic];
@@ -108,6 +110,7 @@ static const uint32_t asteroidCategory = 0x1 << 2;
         [asteroid runAction:moveAsteroidWithDone];
     }
     
+    //COLLISIONS
     for (SKSpriteNode *asteroid in self.asteroidArray) {
         if (asteroid.hidden) {
             continue;
@@ -191,13 +194,15 @@ static const uint32_t asteroidCategory = 0x1 << 2;
     SKTexture *texture = self.shipFramesCenter[0];
     self.ship = [SKSpriteNode spriteNodeWithTexture:texture];
     self.ship.physicsBody = [SKPhysicsBody bodyWithRectangleOfSize:self.ship.size];
-    self.ship.physicsBody.dynamic = NO;
+    self.ship.physicsBody.dynamic = YES;
+    self.ship.physicsBody.allowsRotation = NO;
     self.ship.physicsBody.affectedByGravity = NO;
     self.ship.physicsBody.categoryBitMask = shipCategory;
-    self.ship.physicsBody.collisionBitMask = asteroidCategory;
+    self.ship.physicsBody.collisionBitMask = 0x0;
     self.ship.physicsBody.contactTestBitMask = asteroidCategory;
     self.ship.position = CGPointMake(50, CGRectGetMidY(self.frame));
     self.ship.size = CGSizeMake(self.ship.size.width / 2, self.ship.size.height / 2);
+    self.ship.name = @"ship";
     
     [self addChild:self.ship];
     
@@ -217,6 +222,12 @@ static const uint32_t asteroidCategory = 0x1 << 2;
         shipLaser.hidden = YES;
         shipLaser.physicsBody = [SKPhysicsBody bodyWithRectangleOfSize:shipLaser.size];
         shipLaser.physicsBody.dynamic = NO;
+        shipLaser.physicsBody.allowsRotation = NO;
+        shipLaser.physicsBody.affectedByGravity = NO;
+//        shipLaser.physicsBody.categoryBitMask = laserCategory;
+//        shipLaser.physicsBody.collisionBitMask = asteroidCategory;
+//        shipLaser.physicsBody.contactTestBitMask = asteroidCategory;
+        shipLaser.name = @"laser";
         [_shipLasers addObject:shipLaser];
         [self addChild:shipLaser];
     }
@@ -239,9 +250,11 @@ static const uint32_t asteroidCategory = 0x1 << 2;
         // Setup the asteroid's physics body.
         asteroid.physicsBody = [SKPhysicsBody bodyWithRectangleOfSize:asteroid.size];
         asteroid.physicsBody.dynamic = NO;
+        asteroid.physicsBody.allowsRotation = NO;
         asteroid.physicsBody.categoryBitMask  = asteroidCategory;
-        asteroid.physicsBody.collisionBitMask =  shipCategory | laserCategory;
+        asteroid.physicsBody.collisionBitMask =  0x0;
         asteroid.physicsBody.contactTestBitMask = shipCategory | laserCategory;
+        asteroid.name = @"asteroid";
         
         [self.asteroidArray addObject:asteroid];
         [self addChild:asteroid];
@@ -279,16 +292,11 @@ static const uint32_t asteroidCategory = 0x1 << 2;
                                                                         timePerFrame:0.1f
                                                                               resize:NO
                                                                              restore:YES]] withKey:@"animatingShipCenter"];
-    
-    NSLog(@"touches ended");
 }
 
 
 
 -(void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event {
-    
-    NSLog(@"touches began");
-    
     for (UITouch *touch in touches) {
         SKNode *n = [self nodeAtPoint:[touch locationInNode:self]];
         if (n != self && [n.name isEqual:@"restartLabel"]) {
@@ -405,13 +413,18 @@ static const uint32_t asteroidCategory = 0x1 << 2;
 
 - (void)didBeginContact:(SKPhysicsContact *)contact {
     SKPhysicsBody *firstBody, *secondBody;
+    NSLog(@"contact: %@", contact);
     
     if (contact.bodyA.categoryBitMask < contact.bodyB.categoryBitMask) {
         firstBody = contact.bodyA;
         secondBody = contact.bodyB;
+        
+        
     } else {
         firstBody = contact.bodyB;
         secondBody = contact.bodyA;
+        NSLog(@"firstBody: %@", firstBody);
+        NSLog(@"secondBody: %@", secondBody);
     }
     
     if ((firstBody.categoryBitMask & laserCategory) != 0) {
