@@ -11,6 +11,8 @@
 		4E01758A18B322F500714B14 /* ship_Down.atlas in Resources */ = {isa = PBXBuildFile; fileRef = 4E01758718B322F500714B14 /* ship_Down.atlas */; };
 		4E01758B18B322F500714B14 /* ship_Up.atlas in Resources */ = {isa = PBXBuildFile; fileRef = 4E01758818B322F500714B14 /* ship_Up.atlas */; };
 		4E01758D18B3266400714B14 /* starBackground.png in Resources */ = {isa = PBXBuildFile; fileRef = 4E01758C18B3266400714B14 /* starBackground.png */; };
+		4E01758F18B32E7400714B14 /* asteroid_01.png in Resources */ = {isa = PBXBuildFile; fileRef = 4E01758E18B32E7400714B14 /* asteroid_01.png */; };
+		4E01759118B3309000714B14 /* spaceTheme.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 4E01759018B3309000714B14 /* spaceTheme.mp3 */; };
 		8A6C24D018B27C6E00D32C4E /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8A6C24CF18B27C6E00D32C4E /* Foundation.framework */; };
 		8A6C24D218B27C6E00D32C4E /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8A6C24D118B27C6E00D32C4E /* CoreGraphics.framework */; };
 		8A6C24D418B27C6E00D32C4E /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8A6C24D318B27C6E00D32C4E /* UIKit.framework */; };
@@ -76,6 +78,8 @@
 		4E01758718B322F500714B14 /* ship_Down.atlas */ = {isa = PBXFileReference; lastKnownFileType = folder.skatlas; path = ship_Down.atlas; sourceTree = "<group>"; };
 		4E01758818B322F500714B14 /* ship_Up.atlas */ = {isa = PBXFileReference; lastKnownFileType = folder.skatlas; path = ship_Up.atlas; sourceTree = "<group>"; };
 		4E01758C18B3266400714B14 /* starBackground.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = starBackground.png; sourceTree = "<group>"; };
+		4E01758E18B32E7400714B14 /* asteroid_01.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = asteroid_01.png; sourceTree = "<group>"; };
+		4E01759018B3309000714B14 /* spaceTheme.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = spaceTheme.mp3; sourceTree = "<group>"; };
 		8A6C24CC18B27C6E00D32C4E /* SpriteDemo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SpriteDemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		8A6C24CF18B27C6E00D32C4E /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		8A6C24D118B27C6E00D32C4E /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
@@ -204,9 +208,11 @@
 				8A6C24ED18B27C6E00D32C4E /* ZMBMyScene.m */,
 				8A6C252418B2960B00D32C4E /* TaoLinIcon.png */,
 				8A6C251A18B287AD00D32C4E /* IJ.png */,
+				4E01758E18B32E7400714B14 /* asteroid_01.png */,
 				8A6C251218B2812200D32C4E /* background.png */,
 				8A6C24EF18B27C6E00D32C4E /* Spaceship.png */,
 				4E01758C18B3266400714B14 /* starBackground.png */,
+				4E01759018B3309000714B14 /* spaceTheme.mp3 */,
 				4E01758618B322F500714B14 /* ship_Center.atlas */,
 				4E01758718B322F500714B14 /* ship_Down.atlas */,
 				4E01758818B322F500714B14 /* ship_Up.atlas */,
@@ -413,6 +419,7 @@
 				8A6C252318B28FA700D32C4E /* spark.png in Resources */,
 				8A6C254E18B2BA8000D32C4E /* icon-medium@2x.png in Resources */,
 				8A6C255C18B2BA8000D32C4E /* shake.caf in Resources */,
+				4E01758F18B32E7400714B14 /* asteroid_01.png in Resources */,
 				8A6C252518B2960B00D32C4E /* TaoLinIcon.png in Resources */,
 				8A6C254F18B2BA8000D32C4E /* icon-small.png in Resources */,
 				8A6C255B18B2BA8000D32C4E /* powerup.caf in Resources */,
@@ -422,6 +429,7 @@
 				4E01758D18B3266400714B14 /* starBackground.png in Resources */,
 				8A6C255218B2BA8000D32C4E /* star2.png in Resources */,
 				8A6C251B18B287AD00D32C4E /* IJ.png in Resources */,
+				4E01759118B3309000714B14 /* spaceTheme.mp3 in Resources */,
 				8A6C255918B2BA8000D32C4E /* laser_enemy.caf in Resources */,
 				8A6C24DC18B27C6E00D32C4E /* InfoPlist.strings in Resources */,
 				8A6C255518B2BA8000D32C4E /* stars2.sks in Resources */,
