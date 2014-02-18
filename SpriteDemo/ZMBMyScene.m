@@ -58,7 +58,7 @@ typedef enum {
         
         self.mainCharacter.physicsBody = [SKPhysicsBody bodyWithRectangleOfSize:self.mainCharacter.size];
         self.mainCharacter.physicsBody.dynamic = YES;
-        self.mainCharacter.physicsBody.affectedByGravity = NO;
+        self.mainCharacter.physicsBody.affectedByGravity = YES;
         self.mainCharacter.physicsBody.mass = 0.02;
         
         self.flappyArray = [[NSMutableArray alloc] initWithCapacity:kNumFlappys];
@@ -185,7 +185,7 @@ typedef enum {
         flappy.position = CGPointMake(self.frame.size.width + flappy.size.width / 2, randY);
         flappy.hidden = NO;
         
-        CGPoint location = CGPointMake(-600, randY);
+        CGPoint location = CGPointMake(-600, randY * .3);
         
         SKAction *moveAction = [SKAction moveTo:location duration:randDuration];
         SKAction *doneAction = [SKAction runBlock:^{
