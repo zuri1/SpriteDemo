@@ -8,6 +8,12 @@
 
 #import <SpriteKit/SpriteKit.h>
 
-@interface ZMBMyScene : SKScene
+@interface ZMBMyScene : SKScene {
+    
+}
+
+@property (nonatomic, strong) NSMutableArray *shipFrames;
+
+- (void)setupShip;
 
 @end

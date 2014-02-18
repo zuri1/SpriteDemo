@@ -20,7 +20,7 @@
     bool _gameOver;
 }
 
-@property (strong, nonatomic) SKSpriteNode *mainCharacter;
+@property (strong, nonatomic) SKSpriteNode *ship;
 @property (strong, nonatomic) NSMutableArray *flappyArray;
 
 #define kNumFlappys 8
@@ -41,25 +41,21 @@ typedef enum {
         
         _nextFlappy = 0;
         
-        
-        
         self.physicsBody = [SKPhysicsBody bodyWithEdgeLoopFromRect:self.frame];
         for (int i = 0; i < 2; i++) {
-            SKSpriteNode *bg = [SKSpriteNode spriteNodeWithImageNamed:@"background"];
+            SKSpriteNode *bg = [SKSpriteNode spriteNodeWithImageNamed:@"starBackground"];
             bg.anchorPoint = CGPointZero;
             bg.position = CGPointMake(i * bg.size.width, 0);
-            bg.name = @"background";
+            bg.name = @"starBackground";
             [self addChild:bg];
         }
         
-        self.mainCharacter = [SKSpriteNode spriteNodeWithImageNamed:@"TaoLinIcon"];
-        self.mainCharacter.position = CGPointMake(50, 150);
-        [self addChild:self.mainCharacter];
+        [self setupShip];
         
-        self.mainCharacter.physicsBody = [SKPhysicsBody bodyWithRectangleOfSize:self.mainCharacter.size];
-        self.mainCharacter.physicsBody.dynamic = YES;
-        self.mainCharacter.physicsBody.affectedByGravity = NO;
-        self.mainCharacter.physicsBody.mass = 0.02;
+        self.ship.physicsBody = [SKPhysicsBody bodyWithRectangleOfSize:self.ship.size];
+        self.ship.physicsBody.dynamic = YES;
+        self.ship.physicsBody.affectedByGravity = NO;
+        self.ship.physicsBody.mass = 0.02;
         
         self.flappyArray = [[NSMutableArray alloc] initWithCapacity:kNumFlappys];
         
@@ -98,9 +94,7 @@ typedef enum {
     _gameOverTime = curTime + 30.0;
     _gameOver = NO;
     
-    self.mainCharacter.hidden = NO;
-    
-    
+    self.ship.hidden = NO;
 }
 
 -(void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event {
@@ -129,11 +123,11 @@ typedef enum {
         _nextShipLaser = 0;
     }
     
-    shipLaser.position = CGPointMake(self.mainCharacter.position.x + shipLaser.size.width/2, self.mainCharacter.position.y+0);
+    shipLaser.position = CGPointMake(self.ship.position.x + shipLaser.size.width/2, self.ship.position.y+0);
     shipLaser.hidden = NO;
     [shipLaser removeAllActions];
     
-    CGPoint location = CGPointMake(self.frame.size.width, self.mainCharacter.position.y);
+    CGPoint location = CGPointMake(self.frame.size.width, self.ship.position.y);
     SKAction *laserMoveAction = [SKAction moveTo:location duration:0.5];
     
     SKAction *laserDoneAction = [SKAction runBlock:(dispatch_block_t)^() {
@@ -146,17 +140,37 @@ typedef enum {
     
 }
 
--(float)randomValueBetween:(float)low andValue:(float)high
-{
-    return (((float) arc4random() / 0xFFFFFFFFu) * (high - low)) + low;
+- (void)setupShip {
+    self.shipFrames = [NSMutableArray array];
+    
+    SKTextureAtlas *shipAnimatedAtlas = [SKTextureAtlas atlasNamed:@"ship_Center"];
+    
+    // Add each frame of the ship animation to the ship frames array.
+    for (int i = 1; i < shipAnimatedAtlas.textureNames.count + 1; i++) {
+        NSString *textName = [NSString stringWithFormat:@"shipCenter_%d.png", i];
+        SKTexture *texture = [shipAnimatedAtlas textureNamed:textName];
+        [self.shipFrames addObject:texture];
+    }
+    
+    SKTexture *texture = self.shipFrames[0];
+    self.ship = [SKSpriteNode spriteNodeWithTexture:texture];
+    self.ship.position = CGPointMake(50, CGRectGetMidY(self.frame));
+    self.ship.size = CGSizeMake(self.ship.size.width / 2, self.ship.size.height / 2);
+    [self addChild:self.ship];
+    
+    // Animate the ship.
+    [self.ship runAction:[SKAction repeatActionForever:[SKAction animateWithTextures:self.shipFrames
+                                                                        timePerFrame:0.1f
+                                                                              resize:NO
+                                                                             restore:YES]] withKey:@"animatingShip"];
 }
 
 -(void)update:(CFTimeInterval)currentTime {
     
-    [self enumerateChildNodesWithName:@"background" usingBlock:^(SKNode *node, BOOL *stop) {
+    [self enumerateChildNodesWithName:@"starBackground" usingBlock:^(SKNode *node, BOOL *stop) {
         
         SKSpriteNode *bg = (SKSpriteNode *)node;
-        bg.position = CGPointMake(bg.position.x - 5, bg.position.y);
+        bg.position = CGPointMake(bg.position.x - 1.5, bg.position.y);
         
         if (bg.position.x <= -bg.size.width) {
             bg.position = CGPointMake(bg.position.x + bg.size.width * 2, bg.position.y);
@@ -197,32 +211,32 @@ typedef enum {
         [flappy runAction:moveFlappyActionWithDone];
     }
     
-    for (SKSpriteNode *flappy in _flappyArray) {
-        if (flappy.hidden) {
-            continue;
-        }
-        for (SKSpriteNode *shipLaser in _shipLasers) {
-            if (shipLaser.hidden) {
-                continue;
-            }
-            
-            if ([shipLaser intersectsNode:flappy]) {
-                shipLaser.hidden = YES;
-                flappy.hidden = YES;
-                
-                NSLog(@"you just destroyed a postmodern masterpiece");
-                continue;
-            }
-        }
-        if ([self.mainCharacter intersectsNode:flappy]) {
-            flappy.hidden = YES;
-            SKAction *blink = [SKAction sequence:@[[SKAction fadeOutWithDuration:0.1], [SKAction fadeInWithDuration:0.1]]];
-            SKAction *blinkForTime = [SKAction repeatAction:blink count:4];
-            [self.mainCharacter runAction:blinkForTime];
-            _lives--;
-            NSLog(@"your face feels alienated");
-        }
-    }
+//    for (SKSpriteNode *flappy in _flappyArray) {
+//        if (flappy.hidden) {
+//            continue;
+//        }
+//        for (SKSpriteNode *shipLaser in _shipLasers) {
+//            if (shipLaser.hidden) {
+//                continue;
+//            }
+//            
+//            if ([shipLaser intersectsNode:flappy]) {
+//                shipLaser.hidden = YES;
+//                flappy.hidden = YES;
+//                
+//                NSLog(@"you just destroyed a postmodern masterpiece");
+//                continue;
+//            }
+//        }
+//        if ([self.ship intersectsNode:flappy]) {
+//            flappy.hidden = YES;
+//            SKAction *blink = [SKAction sequence:@[[SKAction fadeOutWithDuration:0.1], [SKAction fadeInWithDuration:0.1]]];
+//            SKAction *blinkForTime = [SKAction repeatAction:blink count:4];
+//            [self.ship runAction:blinkForTime];
+//            _lives--;
+//            NSLog(@"your face feels alienated");
+//        }
+//    }
     
     if (_lives <= 0) {
         NSLog(@"you lose :(");
@@ -255,7 +269,7 @@ typedef enum {
     }
     
     [self removeAllActions];
-    self.mainCharacter.hidden = YES;
+    self.ship.hidden = YES;
     _gameOver = YES;
     
     NSString *message;
@@ -290,28 +304,32 @@ typedef enum {
     
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+-(float)randomValueBetween:(float)low andValue:(float)high
+{
+    return (((float) arc4random() / 0xFFFFFFFFu) * (high - low)) + low;
+}
 
 @end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
