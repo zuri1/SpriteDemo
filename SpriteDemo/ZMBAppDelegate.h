@@ -7,9 +7,12 @@
 //
 
 #import <UIKit/UIKit.h>
+#import <SpriteKit/SpriteKit.h>
 
 @interface ZMBAppDelegate : UIResponder <UIApplicationDelegate>
 
 @property (strong, nonatomic) UIWindow *window;
+
+@property (nonatomic, strong) SKView *mainGameView;
 
 @end

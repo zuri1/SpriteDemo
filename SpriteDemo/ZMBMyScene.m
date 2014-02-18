@@ -8,7 +8,10 @@
 
 #import "ZMBMyScene.h"
 
-@interface ZMBMyScene ()
+#define kNumAsteroids 8
+#define kNumLasers 5
+
+@interface ZMBMyScene () 
 
 {
     int _nextAsteroid;
@@ -20,11 +23,7 @@
     bool _gameOver;
 }
 
-@property (strong, nonatomic) SKSpriteNode *ship;
-@property (strong, nonatomic) NSMutableArray *asteroidArray;
 
-#define kNumAsteroids 8
-#define kNumLasers 5
 
 typedef enum {
     kEndReasonWin,
@@ -35,12 +34,17 @@ typedef enum {
 
 @implementation ZMBMyScene
 
+static const uint32_t laserCategory    = 0x1 << 0;
+static const uint32_t shipCategory     = 0x1 << 1;
+static const uint32_t asteroidCategory = 0x1 << 2;
 
 -(id)initWithSize:(CGSize)size {    
     if (self = [super initWithSize:size]) {
         /* Setup your scene here */
         
         _nextAsteroid = 0;
+        
+        [self setupPhysicsWorld];
         
         [self startBackgroundMusic];
         
@@ -50,17 +54,93 @@ typedef enum {
         
         [self setupAsteroids];
         
-        [self setupLasers];
-        
-        self.ship.physicsBody = [SKPhysicsBody bodyWithRectangleOfSize:self.ship.size];
-        self.ship.physicsBody.dynamic = YES;
-        self.ship.physicsBody.affectedByGravity = NO;
-        self.ship.physicsBody.mass = 0.02;
-        
         [self startTheGame];
         
     }
     return self;
+}
+
+-(void)update:(CFTimeInterval)currentTime {
+    
+    [self enumerateChildNodesWithName:@"starBackground" usingBlock:^(SKNode *node, BOOL *stop) {
+        
+        SKSpriteNode *bg = (SKSpriteNode *)node;
+        bg.position = CGPointMake(bg.position.x - 1.5, bg.position.y);
+        
+        if (bg.position.x <= -bg.size.width) {
+            bg.position = CGPointMake(bg.position.x + bg.size.width * 2, bg.position.y);
+        }
+        
+    }];
+    
+    
+    
+    double curTime = CACurrentMediaTime();
+    
+    if (curTime > _nextAsteroidSpawn) {
+        
+        float randSeconds = [self randomValueBetween:0.20f andValue:1.0f];
+        _nextAsteroidSpawn = randSeconds + curTime;
+        
+        float randY = [self randomValueBetween:0.0f andValue:self.frame.size.height];
+        float randDuration = [self randomValueBetween:5.0f andValue:8.0f];
+        
+        SKSpriteNode *asteroid = self.asteroidArray[_nextAsteroid];
+        _nextAsteroid++;
+        
+        if (_nextAsteroid >= self.asteroidArray.count) {
+            _nextAsteroid = 0;
+        }
+        
+        [asteroid removeAllActions];
+        asteroid.position = CGPointMake(self.frame.size.width + asteroid.size.width / 2, randY);
+        asteroid.hidden = NO;
+        
+        CGPoint location = CGPointMake(-600, randY * .3);
+        
+        SKAction *moveAction = [SKAction moveTo:location duration:randDuration];
+        SKAction *doneAction = [SKAction runBlock:^{
+            asteroid.hidden = YES;
+        }];
+        
+        SKAction *moveAsteroidWithDone = [SKAction sequence:@[moveAction, doneAction]];
+        
+        [asteroid runAction:moveAsteroidWithDone];
+    }
+    
+    for (SKSpriteNode *asteroid in self.asteroidArray) {
+        if (asteroid.hidden) {
+            continue;
+        }
+        for (SKSpriteNode *shipLaser in _shipLasers) {
+            if (shipLaser.hidden) {
+                continue;
+            }
+            
+            if ([shipLaser intersectsNode:asteroid]) {
+                shipLaser.hidden = YES;
+                asteroid.hidden = YES;
+                // Play the asteroid damage sound
+                [self playAsteroidHitSound];
+                continue;
+            }
+        }
+        
+        if ([self.ship intersectsNode:asteroid]) {
+            asteroid.hidden = YES;
+            SKAction *blink = [SKAction sequence:@[[SKAction fadeOutWithDuration:0.1], [SKAction fadeInWithDuration:0.1]]];
+            SKAction *blinkForTime = [SKAction repeatAction:blink count:4];
+            [self.ship runAction:blinkForTime];
+            _lives--;
+            [self playShipDamageSound];
+        }
+    }
+    
+    if (_lives <= 0) {
+        [self endTheScene:kEndReasonLose];
+    } else if (curTime >= _gameOverTime) {
+        [self endTheScene:kEndReasonWin];
+    }
 }
 
 - (void)setupBoundsToScreen {
@@ -73,6 +153,8 @@ typedef enum {
         [self addChild:bg];
     }
 }
+
+#pragma mark - Setup ship
 
 - (void)setupShip {
     self.shipFramesCenter = [NSMutableArray array];
@@ -108,8 +190,15 @@ typedef enum {
     
     SKTexture *texture = self.shipFramesCenter[0];
     self.ship = [SKSpriteNode spriteNodeWithTexture:texture];
+    self.ship.physicsBody = [SKPhysicsBody bodyWithRectangleOfSize:self.ship.size];
+    self.ship.physicsBody.dynamic = NO;
+    self.ship.physicsBody.affectedByGravity = NO;
+    self.ship.physicsBody.categoryBitMask = shipCategory;
+    self.ship.physicsBody.collisionBitMask = asteroidCategory;
+    self.ship.physicsBody.contactTestBitMask = asteroidCategory;
     self.ship.position = CGPointMake(50, CGRectGetMidY(self.frame));
     self.ship.size = CGSizeMake(self.ship.size.width / 2, self.ship.size.height / 2);
+    
     [self addChild:self.ship];
     
     // Animate the ship.
@@ -117,7 +206,27 @@ typedef enum {
                                                                         timePerFrame:0.1f
                                                                               resize:NO
                                                                              restore:YES]] withKey:@"animatingShipCenter"];
+    
+    [self setupLasers];
 }
+
+- (void)setupLasers {
+    _shipLasers = [[NSMutableArray alloc] initWithCapacity:kNumLasers];
+    for (int i = 0; i < kNumLasers; i++) {
+        SKSpriteNode *shipLaser = [SKSpriteNode spriteNodeWithImageNamed:@"laserbeam_blue"];
+        shipLaser.hidden = YES;
+        shipLaser.physicsBody = [SKPhysicsBody bodyWithRectangleOfSize:shipLaser.size];
+        shipLaser.physicsBody.dynamic = NO;
+        [_shipLasers addObject:shipLaser];
+        [self addChild:shipLaser];
+    }
+    
+    for (SKSpriteNode *laser in _shipLasers) {
+        laser.hidden = YES;
+    }
+}
+
+#pragma mark - Setup enemies
 
 - (void)setupAsteroids {
     self.asteroidArray = [[NSMutableArray alloc] initWithCapacity:kNumAsteroids];
@@ -126,22 +235,16 @@ typedef enum {
         SKSpriteNode *asteroid = [SKSpriteNode spriteNodeWithImageNamed:@"asteroid_01"];
         asteroid.position = CGPointMake(700, 100);
         asteroid.hidden = YES;
+        
+        // Setup the asteroid's physics body.
+        asteroid.physicsBody = [SKPhysicsBody bodyWithRectangleOfSize:asteroid.size];
+        asteroid.physicsBody.dynamic = NO;
+        asteroid.physicsBody.categoryBitMask  = asteroidCategory;
+        asteroid.physicsBody.collisionBitMask =  shipCategory | laserCategory;
+        asteroid.physicsBody.contactTestBitMask = shipCategory | laserCategory;
+        
         [self.asteroidArray addObject:asteroid];
         [self addChild:asteroid];
-    }
-}
-
-- (void)setupLasers {
-    _shipLasers = [[NSMutableArray alloc] initWithCapacity:kNumLasers];
-    for (int i = 0; i < kNumLasers; i++) {
-        SKSpriteNode *shipLaser = [SKSpriteNode spriteNodeWithImageNamed:@"laserbeam_blue"];
-        shipLaser.hidden = YES;
-        [_shipLasers addObject:shipLaser];
-        [self addChild:shipLaser];
-    }
-    
-    for (SKSpriteNode *laser in _shipLasers) {
-        laser.hidden = YES;
     }
 }
 
@@ -154,6 +257,8 @@ typedef enum {
     
     self.ship.hidden = NO;
 }
+
+#pragma mark - Touch Methods
 
 - (void)touchesMoved:(NSSet *)touches withEvent:(UIEvent *)event {
     UITouch *touch = [touches anyObject];
@@ -168,21 +273,21 @@ typedef enum {
 }
 
 - (void)touchesEnded:(NSSet *)touches withEvent:(UIEvent *)event {
-    NSLog(@"touches ended");
     [self.ship removeActionForKey:@"animatingShipUp"];
     [self.ship removeActionForKey:@"animatingShipDown"];
     [self.ship runAction:[SKAction repeatActionForever:[SKAction animateWithTextures:self.shipFramesCenter
                                                                         timePerFrame:0.1f
                                                                               resize:NO
                                                                              restore:YES]] withKey:@"animatingShipCenter"];
+    
+    NSLog(@"touches ended");
 }
 
 
 
 -(void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event {
     
-//    [self.mainCharacter.physicsBody setVelocity:CGVectorMake(0, 7)];
-//    [self.mainCharacter.physicsBody applyImpulse:CGVectorMake(0, 7)];
+    NSLog(@"touches began");
     
     for (UITouch *touch in touches) {
         SKNode *n = [self nodeAtPoint:[touch locationInNode:self]];
@@ -221,103 +326,28 @@ typedef enum {
     [self playLaserSound];
 }
 
--(void)update:(CFTimeInterval)currentTime {
-    
-    [self enumerateChildNodesWithName:@"starBackground" usingBlock:^(SKNode *node, BOOL *stop) {
-        
-        SKSpriteNode *bg = (SKSpriteNode *)node;
-        bg.position = CGPointMake(bg.position.x - 1.5, bg.position.y);
-        
-        if (bg.position.x <= -bg.size.width) {
-            bg.position = CGPointMake(bg.position.x + bg.size.width * 2, bg.position.y);
-        }
-        
-    }];
-    
-    double curTime = CACurrentMediaTime();
-    
-    if (curTime > _nextAsteroidSpawn) {
-        
-        float randSeconds = [self randomValueBetween:0.20f andValue:1.0f];
-        _nextAsteroidSpawn = randSeconds + curTime;
-        
-        float randY = [self randomValueBetween:0.0f andValue:self.frame.size.height];
-        float randDuration = [self randomValueBetween:5.0f andValue:8.0f];
-        
-        SKSpriteNode *asteroid = self.asteroidArray[_nextAsteroid];
-        _nextAsteroid++;
-        
-        if (_nextAsteroid >= self.asteroidArray.count) {
-            _nextAsteroid = 0;
-        }
-        
-        [asteroid removeAllActions];
-        asteroid.position = CGPointMake(self.frame.size.width + asteroid.size.width / 2, randY);
-        asteroid.hidden = NO;
-        
-        CGPoint location = CGPointMake(-600, randY * .3);
-        
-        SKAction *moveAction = [SKAction moveTo:location duration:randDuration];
-        SKAction *doneAction = [SKAction runBlock:^{
-            asteroid.hidden = YES;
-        }];
-        
-        SKAction *moveFlappyActionWithDone = [SKAction sequence:@[moveAction, doneAction]];
-        
-        [asteroid runAction:moveFlappyActionWithDone];
-    }
-    
-    for (SKSpriteNode *asteroid in self.asteroidArray) {
-        if (asteroid.hidden) {
-            continue;
-        }
-        for (SKSpriteNode *shipLaser in _shipLasers) {
-            if (shipLaser.hidden) {
-                continue;
-            }
-            
-            if ([shipLaser intersectsNode:asteroid]) {
-                shipLaser.hidden = YES;
-                asteroid.hidden = YES;
-                // Play the asteroid damage sound
-                [self playAsteroidHitSound];
-                continue;
-            }
-        }
-        
-        if ([self.ship intersectsNode:asteroid]) {
-            asteroid.hidden = YES;
-            SKAction *blink = [SKAction sequence:@[[SKAction fadeOutWithDuration:0.1], [SKAction fadeInWithDuration:0.1]]];
-            SKAction *blinkForTime = [SKAction repeatAction:blink count:4];
-            [self.ship runAction:blinkForTime];
-            _lives--;
-            [self playShipDamageSound];
-        }
-    }
-    
-    if (_lives <= 0) {
-        NSLog(@"you lose :(");
-        [self endTheScene:kEndReasonLose];
-    } else if (curTime >= _gameOverTime) {
-        NSLog(@"you win!");
-        [self endTheScene:kEndReasonWin];
-    }
-}
+#pragma mark - Run Loop
 
 - (void)moveShipWithTranslation:(CGPoint)translation {
     // Animate the ship up or down based on finger position.
-    [self.ship runAction:[SKAction sequence:@[[SKAction moveByX:0 y:translation.y duration:0.4f]]]];
+    
+    CGFloat verticalMovement = 5.0f;
+    
+    // Up movement
+    if (translation.y >= 0) {
+        [self.ship runAction:[SKAction sequence:@[[SKAction moveByX:0 y:verticalMovement  duration:0.4f]]]];
+    } else {
+        [self.ship runAction:[SKAction sequence:@[[SKAction moveByX:0 y:-verticalMovement duration:0.4f]]]];
+    }
     
     // Change the animation based on up or down movement.
     if (translation.y >= 0) {
-        NSLog(@"moving up");
         [self.ship removeActionForKey:@"animatingShipCenter"];
         [self.ship runAction:[SKAction repeatActionForever:[SKAction animateWithTextures:self.shipFramesUp
                                                                             timePerFrame:0.1f
                                                                                   resize:NO
                                                                                  restore:YES]] withKey:@"animatingShipUp"];
     } else if (translation.y < 0) {
-        NSLog(@"moving down");
         [self.ship removeActionForKey:@"animatingShipCenter"];
         [self.ship runAction:[SKAction repeatActionForever:[SKAction animateWithTextures:self.shipFramesDown
                                                                             timePerFrame:0.1f
@@ -367,6 +397,31 @@ typedef enum {
     
 }
 
+#pragma mark - Physic World Delegate
+
+- (void)setupPhysicsWorld {
+    self.physicsWorld.contactDelegate = self;
+}
+
+- (void)didBeginContact:(SKPhysicsContact *)contact {
+    SKPhysicsBody *firstBody, *secondBody;
+    
+    if (contact.bodyA.categoryBitMask < contact.bodyB.categoryBitMask) {
+        firstBody = contact.bodyA;
+        secondBody = contact.bodyB;
+    } else {
+        firstBody = contact.bodyB;
+        secondBody = contact.bodyA;
+    }
+    
+    if ((firstBody.categoryBitMask & laserCategory) != 0) {
+        
+    }
+}
+
+#pragma -
+#pragma mark - Music
+
 - (void)startBackgroundMusic {
     NSError *error;
     NSURL *file = [NSURL fileURLWithPath:[[NSBundle mainBundle] pathForResource:@"spaceTheme" ofType:@"mp3"]];
@@ -384,6 +439,8 @@ typedef enum {
     [backgroundAudioPlayer setVolume:1.0];
     [backgroundAudioPlayer play];
 }
+
+#pragma mark - Sound Effects
 
 - (void)playAsteroidHitSound {
     [self runAction:[SKAction playSoundFileNamed:@"hurt_asteroid_01.wav" waitForCompletion:NO]];

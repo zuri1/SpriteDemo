@@ -16,6 +16,7 @@
 		4E23158118B3C037005C3946 /* hurt_ship_01.wav in Resources */ = {isa = PBXBuildFile; fileRef = 4E23157E18B3C037005C3946 /* hurt_ship_01.wav */; };
 		4E23158218B3C037005C3946 /* laser_shoot_01.wav in Resources */ = {isa = PBXBuildFile; fileRef = 4E23157F18B3C037005C3946 /* laser_shoot_01.wav */; };
 		4E23158518B3C71A005C3946 /* starBackground.png in Resources */ = {isa = PBXBuildFile; fileRef = 4E23158418B3C71A005C3946 /* starBackground.png */; };
+		4E23164918B41865005C3946 /* SKShip.m in Sources */ = {isa = PBXBuildFile; fileRef = 4E23164818B41865005C3946 /* SKShip.m */; };
 		8A6C24D018B27C6E00D32C4E /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8A6C24CF18B27C6E00D32C4E /* Foundation.framework */; };
 		8A6C24D218B27C6E00D32C4E /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8A6C24D118B27C6E00D32C4E /* CoreGraphics.framework */; };
 		8A6C24D418B27C6E00D32C4E /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8A6C24D318B27C6E00D32C4E /* UIKit.framework */; };
@@ -86,6 +87,8 @@
 		4E23157E18B3C037005C3946 /* hurt_ship_01.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = hurt_ship_01.wav; sourceTree = "<group>"; };
 		4E23157F18B3C037005C3946 /* laser_shoot_01.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = laser_shoot_01.wav; sourceTree = "<group>"; };
 		4E23158418B3C71A005C3946 /* starBackground.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = starBackground.png; sourceTree = "<group>"; };
+		4E23164718B41865005C3946 /* SKShip.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SKShip.h; sourceTree = "<group>"; };
+		4E23164818B41865005C3946 /* SKShip.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SKShip.m; sourceTree = "<group>"; };
 		8A6C24CC18B27C6E00D32C4E /* SpriteDemo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SpriteDemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		8A6C24CF18B27C6E00D32C4E /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		8A6C24D118B27C6E00D32C4E /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
@@ -192,6 +195,15 @@
 			name = Images;
 			sourceTree = "<group>";
 		};
+		4E23164618B41850005C3946 /* SKNodes */ = {
+			isa = PBXGroup;
+			children = (
+				4E23164718B41865005C3946 /* SKShip.h */,
+				4E23164818B41865005C3946 /* SKShip.m */,
+			);
+			name = SKNodes;
+			sourceTree = "<group>";
+		};
 		8A6C24C318B27C6E00D32C4E = {
 			isa = PBXGroup;
 			children = (
@@ -228,6 +240,7 @@
 		8A6C24D718B27C6E00D32C4E /* SpriteDemo */ = {
 			isa = PBXGroup;
 			children = (
+				4E23164618B41850005C3946 /* SKNodes */,
 				4E23158618B3C721005C3946 /* Images */,
 				4E23158318B3C03D005C3946 /* sounds */,
 				8A6C24E018B27C6E00D32C4E /* ZMBAppDelegate.h */,
@@ -489,6 +502,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				8A6C24EE18B27C6E00D32C4E /* ZMBMyScene.m in Sources */,
+				4E23164918B41865005C3946 /* SKShip.m in Sources */,
 				8A6C24E218B27C6E00D32C4E /* ZMBAppDelegate.m in Sources */,
 				8A6C24DE18B27C6E00D32C4E /* main.m in Sources */,
 				8A6C254B18B2BA8000D32C4E /* FMMParallaxNode.m in Sources */,

@@ -7,12 +7,16 @@
 //
 
 #import <SpriteKit/SpriteKit.h>
+#import "SKShip.h"
 
 @import AVFoundation;
 
-@interface ZMBMyScene : SKScene {
+@interface ZMBMyScene : SKScene <SKPhysicsContactDelegate> {
     AVAudioPlayer *backgroundAudioPlayer;
 }
+
+@property (strong, nonatomic) SKSpriteNode *ship;
+@property (strong, nonatomic) NSMutableArray *asteroidArray;
 
 @property (nonatomic, strong) NSMutableArray *shipFramesCenter;
 @property (nonatomic, strong) NSMutableArray *shipFramesUp;
