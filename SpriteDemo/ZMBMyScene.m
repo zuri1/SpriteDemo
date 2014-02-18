@@ -42,10 +42,7 @@ typedef enum {
         
         _nextAsteroid = 0;
         
-        self.mainCharacter.physicsBody = [SKPhysicsBody bodyWithRectangleOfSize:self.mainCharacter.size];
-        self.mainCharacter.physicsBody.dynamic = YES;
-        self.mainCharacter.physicsBody.affectedByGravity = YES;
-        self.mainCharacter.physicsBody.mass = 0.02;
+        [self startBackgroundMusic];
         
         [self setupBoundsToScreen];
         
@@ -54,6 +51,11 @@ typedef enum {
         [self setupAsteroids];
         
         [self setupLasers];
+        
+        self.ship.physicsBody = [SKPhysicsBody bodyWithRectangleOfSize:self.ship.size];
+        self.ship.physicsBody.dynamic = YES;
+        self.ship.physicsBody.affectedByGravity = NO;
+        self.ship.physicsBody.mass = 0.02;
         
         [self startTheGame];
         
