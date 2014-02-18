@@ -8,6 +8,16 @@
 
 #import <SpriteKit/SpriteKit.h>
 
-@interface ZMBMyScene : SKScene
+@import AVFoundation;
+
+@interface ZMBMyScene : SKScene {
+    AVAudioPlayer *backgroundAudioPlayer;
+}
+
+@property (nonatomic, strong) NSMutableArray *shipFramesCenter;
+@property (nonatomic, strong) NSMutableArray *shipFramesUp;
+@property (nonatomic, strong) NSMutableArray *shipFramesDown;
+
+- (void)setupShip;
 
 @end
