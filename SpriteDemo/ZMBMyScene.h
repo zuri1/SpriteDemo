@@ -13,6 +13,9 @@
 
 @interface ZMBMyScene : SKScene <SKPhysicsContactDelegate> {
     AVAudioPlayer *backgroundAudioPlayer;
+    
+    BOOL shouldFire;
+    float shipFireRate;
 }
 
 @property (strong, nonatomic) SKSpriteNode *ship;

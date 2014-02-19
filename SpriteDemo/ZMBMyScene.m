@@ -21,9 +21,9 @@
     int _lives;
     double _gameOverTime;
     bool _gameOver;
+    
+    BOOL shipIsDamaged;
 }
-
-
 
 typedef enum {
     kEndReasonWin,
@@ -63,6 +63,7 @@ static const uint32_t asteroidCategory = 0x1 << 2;
 }
 
 -(void)update:(CFTimeInterval)currentTime {
+    NSLog(@"%.2f", currentTime);
     
     [self enumerateChildNodesWithName:@"starBackground" usingBlock:^(SKNode *node, BOOL *stop) {
         
@@ -74,8 +75,6 @@ static const uint32_t asteroidCategory = 0x1 << 2;
         }
         
     }];
-    
-    
     
     double curTime = CACurrentMediaTime();
     
@@ -127,15 +126,6 @@ static const uint32_t asteroidCategory = 0x1 << 2;
                 [self playAsteroidHitSound];
                 continue;
             }
-        }
-        
-        if ([self.ship intersectsNode:asteroid]) {
-            asteroid.hidden = YES;
-            SKAction *blink = [SKAction sequence:@[[SKAction fadeOutWithDuration:0.1], [SKAction fadeInWithDuration:0.1]]];
-            SKAction *blinkForTime = [SKAction repeatAction:blink count:4];
-            [self.ship runAction:blinkForTime];
-            _lives--;
-            [self playShipDamageSound];
         }
     }
     
@@ -203,6 +193,9 @@ static const uint32_t asteroidCategory = 0x1 << 2;
     self.ship.position = CGPointMake(50, CGRectGetMidY(self.frame));
     self.ship.size = CGSizeMake(self.ship.size.width / 2, self.ship.size.height / 2);
     self.ship.name = @"ship";
+    shipIsDamaged = NO;
+    shouldFire = NO;
+    shipFireRate = 0.5f;
     
     [self addChild:self.ship];
     
@@ -235,6 +228,30 @@ static const uint32_t asteroidCategory = 0x1 << 2;
     for (SKSpriteNode *laser in _shipLasers) {
         laser.hidden = YES;
     }
+}
+
+- (void)fireWeapon {
+    SKSpriteNode *shipLaser = [_shipLasers objectAtIndex:_nextShipLaser];
+    _nextShipLaser++;
+    if (_nextShipLaser >= _shipLasers.count) {
+        _nextShipLaser = 0;
+    }
+    
+    shipLaser.position = CGPointMake(self.ship.position.x + shipLaser.size.width/2, self.ship.position.y+0);
+    shipLaser.hidden = NO;
+    [shipLaser removeAllActions];
+    
+    CGPoint location = CGPointMake(self.frame.size.width, self.ship.position.y);
+    SKAction *laserMoveAction = [SKAction moveTo:location duration:0.5];
+    
+    SKAction *laserDoneAction = [SKAction runBlock:(dispatch_block_t)^() {
+        shipLaser.hidden = YES;
+    }];
+    
+    SKAction *moveLaserActionWithDone = [SKAction sequence:@[laserMoveAction,laserDoneAction]];
+    
+    [shipLaser runAction:moveLaserActionWithDone withKey:@"laserFired"];
+    [self playLaserSound];
 }
 
 #pragma mark - Setup enemies
@@ -286,6 +303,9 @@ static const uint32_t asteroidCategory = 0x1 << 2;
 }
 
 - (void)touchesEnded:(NSSet *)touches withEvent:(UIEvent *)event {
+    // When the user releases the screen, the ship should stop firing.
+    shouldFire = NO;
+    
     [self.ship removeActionForKey:@"animatingShipUp"];
     [self.ship removeActionForKey:@"animatingShipDown"];
     [self.ship runAction:[SKAction repeatActionForever:[SKAction animateWithTextures:self.shipFramesCenter
@@ -293,8 +313,6 @@ static const uint32_t asteroidCategory = 0x1 << 2;
                                                                               resize:NO
                                                                              restore:YES]] withKey:@"animatingShipCenter"];
 }
-
-
 
 -(void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event {
     for (UITouch *touch in touches) {
@@ -307,31 +325,14 @@ static const uint32_t asteroidCategory = 0x1 << 2;
         }
     }
     
+    // When the user touches the screen, the ship should start firing.
+    shouldFire = YES;
+    
     if (_gameOver) {
         return;
     }
     
-    SKSpriteNode *shipLaser = [_shipLasers objectAtIndex:_nextShipLaser];
-    _nextShipLaser++;
-    if (_nextShipLaser >= _shipLasers.count) {
-        _nextShipLaser = 0;
-    }
-    
-    shipLaser.position = CGPointMake(self.ship.position.x + shipLaser.size.width/2, self.ship.position.y+0);
-    shipLaser.hidden = NO;
-    [shipLaser removeAllActions];
-    
-    CGPoint location = CGPointMake(self.frame.size.width, self.ship.position.y);
-    SKAction *laserMoveAction = [SKAction moveTo:location duration:0.5];
-    
-    SKAction *laserDoneAction = [SKAction runBlock:(dispatch_block_t)^() {
-        shipLaser.hidden = YES;
-    }];
-    
-    SKAction *moveLaserActionWithDone = [SKAction sequence:@[laserMoveAction,laserDoneAction]];
-    
-    [shipLaser runAction:moveLaserActionWithDone withKey:@"laserFired"];
-    [self playLaserSound];
+    [self fireWeapon];
 }
 
 #pragma mark - Run Loop
@@ -413,21 +414,20 @@ static const uint32_t asteroidCategory = 0x1 << 2;
 
 - (void)didBeginContact:(SKPhysicsContact *)contact {
     SKPhysicsBody *firstBody, *secondBody;
-    NSLog(@"contact: %@", contact);
     
     if (contact.bodyA.categoryBitMask < contact.bodyB.categoryBitMask) {
         firstBody = contact.bodyA;
         secondBody = contact.bodyB;
         
-        [secondBody.node removeFromParent];
-        secondBody.node.hidden = YES;
-        
-        firstBody.node.hidden = YES;
-        SKAction *blink = [SKAction sequence:@[[SKAction fadeOutWithDuration:0.1], [SKAction fadeInWithDuration:0.1]]];
-        SKAction *blinkForTime = [SKAction repeatAction:blink count:4];
-        [firstBody.node runAction:blinkForTime];
-        _lives--;
-        [self playShipDamageSound];
+        // If the first body is the ship.
+        if ([firstBody.node.name isEqualToString:@"ship"] && shipIsDamaged == NO) {
+            [self shipTookDamage];
+            
+            // If second body is an asteroid
+            if ([secondBody.node.name isEqualToString:@"asteroid"]) {
+                secondBody.node.hidden = YES;
+            }
+        }
         
     } else {
         firstBody = contact.bodyB;
@@ -439,6 +439,18 @@ static const uint32_t asteroidCategory = 0x1 << 2;
     if ((firstBody.categoryBitMask & laserCategory) != 0) {
         
     }
+}
+
+- (void)shipTookDamage {
+    shipIsDamaged = YES;
+    
+    SKAction *blink = [SKAction sequence:@[[SKAction fadeOutWithDuration:0.1], [SKAction fadeInWithDuration:0.1]]];
+    SKAction *blinkForTime = [SKAction repeatAction:blink count:4];
+    [self.ship runAction:blinkForTime completion:^{
+        shipIsDamaged = NO;
+    }];
+//    _lives--;
+    [self playShipDamageSound];
 }
 
 #pragma -
