@@ -341,15 +341,6 @@ static const uint32_t asteroidCategory = 0x1 << 2;
     
     [self.ship runAction:[SKAction sequence:@[[SKAction moveByX:0 y:translation.y duration:0.4f]]]];
     
-//    CGFloat verticalMovement = 5.0f;
-//    
-//    // Up movement
-//    if (translation.y >= 0) {
-//        [self.ship runAction:[SKAction sequence:@[[SKAction moveByX:0 y:verticalMovement  duration:0.4f]]]];
-//    } else {
-//        [self.ship runAction:[SKAction sequence:@[[SKAction moveByX:0 y:-verticalMovement duration:0.4f]]]];
-//    }
-    
     // Change the animation based on up or down movement.
     if (translation.y >= 0) {
         [self.ship removeActionForKey:@"animatingShipCenter"];
