@@ -419,6 +419,15 @@ static const uint32_t asteroidCategory = 0x1 << 2;
         firstBody = contact.bodyA;
         secondBody = contact.bodyB;
         
+        [secondBody.node removeFromParent];
+        secondBody.node.hidden = YES;
+        
+        firstBody.node.hidden = YES;
+        SKAction *blink = [SKAction sequence:@[[SKAction fadeOutWithDuration:0.1], [SKAction fadeInWithDuration:0.1]]];
+        SKAction *blinkForTime = [SKAction repeatAction:blink count:4];
+        [firstBody.node runAction:blinkForTime];
+        _lives--;
+        [self playShipDamageSound];
         
     } else {
         firstBody = contact.bodyB;
