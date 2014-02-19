@@ -63,7 +63,6 @@ static const uint32_t asteroidCategory = 0x1 << 2;
 }
 
 -(void)update:(CFTimeInterval)currentTime {
-    NSLog(@"%.2f", currentTime);
     
     [self enumerateChildNodesWithName:@"starBackground" usingBlock:^(SKNode *node, BOOL *stop) {
         
@@ -217,9 +216,9 @@ static const uint32_t asteroidCategory = 0x1 << 2;
         shipLaser.physicsBody.dynamic = NO;
         shipLaser.physicsBody.allowsRotation = NO;
         shipLaser.physicsBody.affectedByGravity = NO;
-//        shipLaser.physicsBody.categoryBitMask = laserCategory;
-//        shipLaser.physicsBody.collisionBitMask = asteroidCategory;
-//        shipLaser.physicsBody.contactTestBitMask = asteroidCategory;
+        shipLaser.physicsBody.categoryBitMask = laserCategory;
+        shipLaser.physicsBody.collisionBitMask = asteroidCategory;
+        shipLaser.physicsBody.contactTestBitMask = asteroidCategory;
         shipLaser.name = @"laser";
         [_shipLasers addObject:shipLaser];
         [self addChild:shipLaser];
@@ -293,7 +292,7 @@ static const uint32_t asteroidCategory = 0x1 << 2;
 - (void)touchesMoved:(NSSet *)touches withEvent:(UIEvent *)event {
     UITouch *touch = [touches anyObject];
     
-    CGPoint positionInScene = [touch locationInNode:self];
+    CGPoint positionInScene  = [touch locationInNode:self];
     CGPoint previousPosition = [touch previousLocationInNode:self];
     CGPoint translation = CGPointMake(positionInScene.x - previousPosition.x,
                                       positionInScene.y - previousPosition.y);
@@ -340,14 +339,16 @@ static const uint32_t asteroidCategory = 0x1 << 2;
 - (void)moveShipWithTranslation:(CGPoint)translation {
     // Animate the ship up or down based on finger position.
     
-    CGFloat verticalMovement = 5.0f;
+    [self.ship runAction:[SKAction sequence:@[[SKAction moveByX:0 y:translation.y duration:0.4f]]]];
     
-    // Up movement
-    if (translation.y >= 0) {
-        [self.ship runAction:[SKAction sequence:@[[SKAction moveByX:0 y:verticalMovement  duration:0.4f]]]];
-    } else {
-        [self.ship runAction:[SKAction sequence:@[[SKAction moveByX:0 y:-verticalMovement duration:0.4f]]]];
-    }
+//    CGFloat verticalMovement = 5.0f;
+//    
+//    // Up movement
+//    if (translation.y >= 0) {
+//        [self.ship runAction:[SKAction sequence:@[[SKAction moveByX:0 y:verticalMovement  duration:0.4f]]]];
+//    } else {
+//        [self.ship runAction:[SKAction sequence:@[[SKAction moveByX:0 y:-verticalMovement duration:0.4f]]]];
+//    }
     
     // Change the animation based on up or down movement.
     if (translation.y >= 0) {
@@ -409,22 +410,31 @@ static const uint32_t asteroidCategory = 0x1 << 2;
 #pragma mark - Physic World Delegate
 
 - (void)setupPhysicsWorld {
-    self.physicsWorld.contactDelegate = self;
+    self.physicsWorld.contactDelegate   = self;
+    self.physicsBody.contactTestBitMask = 0x0;
+    self.physicsBody.collisionBitMask   = 0x0;
 }
 
 - (void)didBeginContact:(SKPhysicsContact *)contact {
     SKPhysicsBody *firstBody, *secondBody;
+    NSLog(@"contact: %@", contact);
     
     if (contact.bodyA.categoryBitMask < contact.bodyB.categoryBitMask) {
         firstBody = contact.bodyA;
         secondBody = contact.bodyB;
         
+        NSLog(@"firstBody: %@", firstBody);
+        NSLog(@"secondBody: %@", secondBody);
+        
         // If the first body is the ship.
-        if ([firstBody.node.name isEqualToString:@"ship"] && shipIsDamaged == NO) {
-            [self shipTookDamage];
+        if ((firstBody.categoryBitMask == shipCategory || secondBody.categoryBitMask == shipCategory) && shipIsDamaged == NO && !secondBody.node.hidden) {
+            if (!firstBody.node.hidden || !secondBody.node.hidden) {
+                [self shipTookDamage];
+            }
+            
             
             // If second body is an asteroid
-            if ([secondBody.node.name isEqualToString:@"asteroid"]) {
+            if (secondBody.categoryBitMask == asteroidCategory) {
                 secondBody.node.hidden = YES;
             }
         }
